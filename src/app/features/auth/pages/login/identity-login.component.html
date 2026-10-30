@@ -1,0 +1,15 @@
+<app-auth-layout>
+  <section aria-labelledby="login-title">
+    <h1 id="login-title" class="sr-only">Iniciar sesión</h1>
+    <form [formRoot]="loginForm" class="space-y-4" (submit)="submit($event)">
+      <ui-field [formField]="loginForm.username" autocomplete="username" id="username" label="Usuario" placeholder="Ingresa tu usuario o correo" />
+      <ui-field [formField]="loginForm.password" autocomplete="current-password" id="password" label="Contraseña" placeholder="Ingresa tu contraseña" [showPasswordToggle]="true" type="password" />
+      @if (notice(); as message) { <ui-alert id="login-notice" [tone]="message.tone">{{ message.text }}</ui-alert> }
+      <ui-button class="mt-2" [disabled]="submitting()" [fullWidth]="true" [pill]="true" type="submit">{{ submitting() ? 'Ingresando…' : 'Iniciar sesión' }}</ui-button>
+    </form>
+    <p class="mt-5 text-center text-xs text-[#7c8691]">Acceso restringido a administradores de plataforma.</p>
+    <div class="my-5 flex items-center gap-4 text-sm text-[#7c8691]" aria-hidden="true"><span class="h-px flex-1 bg-[#dfd6d6]"></span><span>o</span><span class="h-px flex-1 bg-[#dfd6d6]"></span></div>
+    <ui-button [fullWidth]="true" [pill]="true" variant="soft" type="button" (click)="continueWithGoogle()">Continuar con Google</ui-button>
+    <div class="mt-6 text-center text-sm"><span class="font-semibold text-[#92001f]">¿Olvidaste tu contraseña?</span></div>
+  </section>
+</app-auth-layout>
