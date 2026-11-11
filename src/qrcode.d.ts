@@ -1,3 +1,7 @@
 declare module 'qrcode' {
-  export function toDataURL(text: string, options?: { margin?: number; width?: number }): Promise<string>;
+  interface QRCodeApi {
+    toString(text: string, options?: { type?: 'svg'; margin?: number; width?: number }): Promise<string>;
+  }
+  const qrcode: QRCodeApi;
+  export default qrcode;
 }

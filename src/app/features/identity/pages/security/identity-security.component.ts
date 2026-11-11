@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import QRCode from 'qrcode';
 
 import { IdentityHttp } from '../../../../core/http/identity-http';
 import { UiButtonComponent } from '../../../../shared/ui/button/ui-button.component';
@@ -34,8 +35,8 @@ export class IdentitySecurityComponent implements OnInit {
       const setup = await this.http.sendJson<{ secret?: string; otpauthUrl?: string }>('POST', '/api/v1/auth/profile/totp');
       if (!setup.secret || !setup.otpauthUrl) throw new Error('No se pudo preparar la configuración.');
       this.secret.set(setup.secret);
-      const qr = await import('qrcode');
-      this.qr.set(await qr.toDataURL(setup.otpauthUrl, { margin: 1, width: 220 }));
+      const svg = await QRCode.toString(setup.otpauthUrl, { type: 'svg', margin: 1, width: 220 });
+      this.qr.set(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
     } catch (error) {
       this.notice.set(error instanceof Error ? error.message : 'No se pudo preparar la configuración.');
     } finally { this.saving.set(false); }
