@@ -20,14 +20,14 @@ export class IdentityAuthService {
   readonly user = signal<IdentityUser | null>(null);
   private csrfToken: string | null = null;
 
-  async login(username: string, password: string, recaptchaToken: string): Promise<void> {
+  async login(username: string, password: string, recaptchaToken: string, totpCode?: string): Promise<void> {
     const response = await fetch(`${authBaseUrl}/login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, recaptchaToken }),
+      body: JSON.stringify({ username, password, recaptchaToken, ...(totpCode ? { totpCode } : {}) }),
     });
-    if (!response.ok) throw new Error('No pudimos iniciar sesión. Verifica tus credenciales e inténtalo nuevamente.');
+    if (!response.ok) throw new Error(await loginError(response));
     const session = toSession(await response.json() as unknown);
     this.csrfToken = session.csrfToken;
     this.user.set(session.user);
@@ -65,6 +65,14 @@ export class IdentityAuthService {
     return toSession(await response.json() as unknown);
   }
 }
+
+const loginError = async (response: Response): Promise<string> => {
+  try {
+    const payload = await response.json() as { message?: unknown };
+    if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+  } catch { /* el cuerpo no es JSON */ }
+  return 'No pudimos iniciar sesión. Verifica tus credenciales e inténtalo nuevamente.';
+};
 
 const toSession = (value: unknown): { readonly csrfToken: string; readonly user: IdentityUser } => {
   if (!value || typeof value !== 'object') throw new Error('Respuesta de autenticación inválida.');

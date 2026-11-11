@@ -1,0 +1,40 @@
+<section class="rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgb(30_30_30_/_8%)] sm:p-8">
+  <p class="text-sm text-[#7c8691]">Tu cuenta</p>
+  <h1 class="mt-2 font-[var(--font-heading)] text-3xl font-semibold text-[#a9002d]">Autenticación de dos pasos</h1>
+  <p class="mt-3 max-w-2xl text-[#7c8691]">Funciona con Google Authenticator y Microsoft Authenticator. Después de la contraseña, el ingreso pide el código de 6 dígitos de la aplicación.</p>
+  @if (notice()) { <p class="mt-4 text-sm font-semibold text-[#a9002d]" role="status">{{ notice() }}</p> }
+
+  @if (enabled()) {
+    <p class="mt-6 text-sm font-semibold text-[#1e1e1e]">Está activa en esta cuenta.</p>
+    <form class="mt-4 grid max-w-md gap-4" (submit)="$event.preventDefault(); disable()">
+      <label class="text-sm font-semibold">Contraseña
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" type="password" autocomplete="current-password" [value]="password()" (input)="password.set($any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">Código actual
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" inputmode="numeric" autocomplete="one-time-code" maxlength="6" [value]="code()" (input)="code.set($any($event.target).value)" />
+      </label>
+      <ui-button type="submit" variant="secondary" [disabled]="saving()">Desactivar</ui-button>
+    </form>
+  } @else if (!secret()) {
+    <div class="mt-6">
+      <ui-button type="button" [disabled]="saving()" (click)="begin()">Activar autenticación de dos pasos</ui-button>
+    </div>
+  } @else {
+    <div class="mt-6 flex flex-wrap items-start gap-6">
+      @if (qr()) { <img class="size-56 rounded-xl border border-[#eed6db]" [src]="qr()" alt="Código para Google Authenticator o Microsoft Authenticator" /> }
+      <div class="max-w-md">
+        <p class="text-sm text-[#1e1e1e]">Escanea el código con la aplicación o ingresa esta clave manualmente:</p>
+        <p class="mt-2 break-all font-mono text-sm font-semibold text-[#a9002d]">{{ secret() }}</p>
+        <p class="mt-2 text-sm text-[#7c8691]">Tipo: basado en tiempo. Emisor: Identidad UPRIT.</p>
+        <form class="mt-4" (submit)="$event.preventDefault(); confirm()">
+          <label class="text-sm font-semibold">Código que muestra la aplicación
+            <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" inputmode="numeric" autocomplete="one-time-code" maxlength="6" [value]="code()" (input)="code.set($any($event.target).value)" />
+          </label>
+          <div class="mt-4">
+            <ui-button type="submit" [disabled]="saving()">Confirmar y activar</ui-button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

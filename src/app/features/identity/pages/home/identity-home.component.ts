@@ -35,6 +35,11 @@ export class IdentityHomeComponent implements OnInit {
     this.notificationsOpen.update((value) => !value);
   }
   closePanels(): void { this.profileOpen.set(false); this.notificationsOpen.set(false); }
+  openSecurity(): void {
+    this.profileOpen.set(false);
+    void this.router.navigateByUrl('/seguridad');
+  }
+
   async logout(): Promise<void> {
     try {
       await this.auth.logout();

@@ -5,6 +5,7 @@ import { IdentityDashboardComponent } from './features/identity/pages/home/ident
 import { IdentityHomeComponent } from './features/identity/pages/home/identity-home.component';
 import { IdentityModuleComponent } from './features/identity/pages/module/identity-module.component';
 import { IdentityRolesComponent } from './features/identity/pages/roles/identity-roles.component';
+import { IdentitySecurityComponent } from './features/identity/pages/security/identity-security.component';
 import { IdentityUserFormComponent } from './features/identity/pages/users/identity-user-form.component';
 import { IdentityUsersComponent } from './features/identity/pages/users/identity-users.component';
 
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: 'aplicaciones', title: 'Aplicaciones · Identidad UPRIT', component: IdentityModuleComponent, data: { section: 'aplicaciones' } },
       { path: 'roles', title: 'Roles · Identidad UPRIT', component: IdentityRolesComponent },
       { path: 'auditoria', title: 'Auditoría · Identidad UPRIT', component: IdentityModuleComponent, data: { section: 'auditoria' } },
+      { path: 'seguridad', title: 'Autenticación de dos pasos · Identidad UPRIT', component: IdentitySecurityComponent },
     ],
   },
   { path: 'login', title: 'Iniciar sesión', component: IdentityLoginComponent },
