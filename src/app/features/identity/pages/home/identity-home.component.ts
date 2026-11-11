@@ -14,13 +14,31 @@ export class IdentityHomeComponent implements OnInit {
   readonly profileOpen = signal(false);
   readonly notificationsOpen = signal(false);
   readonly displayName = computed(() => this.auth.user()?.displayName || this.auth.user()?.username || 'Usuario');
+  readonly users = signal(0);
+  readonly applications = signal(0);
+  readonly events = signal(0);
 
   async ngOnInit(): Promise<void> {
     try {
-      if (!await this.auth.restore()) await this.router.navigateByUrl('/login');
+      if (!await this.auth.restore()) {
+        await this.router.navigateByUrl('/login');
+        return;
+      }
+      await this.loadTotals();
     } catch {
       await this.router.navigateByUrl('/login');
     }
+  }
+
+  private async loadTotals(): Promise<void> {
+    const [users, applications, events] = await Promise.all([
+      readTotal('/api/v1/auth/admin/users?page=1&pageSize=5'),
+      readTotal('/api/v1/auth/admin/modules?page=1&pageSize=5'),
+      readTotal('/api/v1/auth/admin/audit?page=1&pageSize=5'),
+    ]);
+    this.users.set(users);
+    this.applications.set(applications);
+    this.events.set(events);
   }
 
   toggleMenu(): void { this.menuOpen.update((value) => !value); }
@@ -43,3 +61,11 @@ export class IdentityHomeComponent implements OnInit {
     }
   }
 }
+
+const readTotal = async (url: string): Promise<number> => {
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) return 0;
+  const payload: unknown = await response.json();
+  const total = payload && typeof payload === 'object' ? (payload as { total?: unknown }).total : 0;
+  return typeof total === 'number' ? total : 0;
+};

@@ -1,1 +1,19 @@
-<main class="min-h-dvh bg-[#fcf9fa] p-6 sm:p-10"><a routerLink="/inicio" class="text-sm font-semibold text-[#173b5b]">← Identidad UPRIT</a><section class="mx-auto mt-12 max-w-4xl rounded-2xl bg-white p-8 shadow-[0_8px_24px_rgb(30_30_30_/_8%)]"><p class="text-sm text-[#687787]">Administración global</p><h1 class="mt-2 font-[var(--font-heading)] text-3xl font-semibold text-[#173b5b]">{{ copy.title }}</h1><p class="mt-3 max-w-2xl text-[#687787]">{{ copy.description }}</p><div class="mt-8 border-t border-[#e5e7eb] pt-6"><p class="text-sm text-[#687787]">Este módulo está listo para conectarse a los endpoints globales de Auth.</p><button class="mt-5 rounded-full bg-[#173b5b] px-5 py-3 text-sm font-semibold text-white" type="button">{{ copy.action }}</button></div></section></main>
+<main class="min-h-dvh bg-[#fcf9fa] p-6 sm:p-10">
+  <a routerLink="/inicio" class="text-sm font-semibold text-[#a9002d]">← Identidad UPRIT</a>
+  <section class="mx-auto mt-8 max-w-4xl rounded-2xl bg-white p-8 shadow-[0_8px_24px_rgb(30_30_30_/_8%)]">
+    <p class="text-sm text-[#7c8691]">Administración global</p>
+    <h1 class="mt-2 font-[var(--font-heading)] text-3xl font-semibold text-[#a9002d]">{{ copy.title }}</h1>
+    <p class="mt-3 max-w-2xl text-[#7c8691]">{{ copy.description }}</p>
+    @if (notice()) {
+      <p class="mt-6 text-sm font-semibold text-[#a9002d]" role="alert">{{ notice() }}</p>
+    } @else if (rows().length === 0) {
+      <p class="mt-6 text-sm text-[#7c8691]">No hay registros para mostrar.</p>
+    } @else {
+      <ul class="mt-6 divide-y divide-[#eed6db]">
+        @for (row of rows(); track row) {
+          <li class="py-3 text-sm font-semibold text-[#1e1e1e]">{{ row }}</li>
+        }
+      </ul>
+    }
+  </section>
+</main>
