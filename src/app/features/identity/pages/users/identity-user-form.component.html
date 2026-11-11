@@ -1,0 +1,81 @@
+<section class="rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgb(30_30_30_/_8%)] sm:p-8">
+  <a class="text-sm font-semibold text-[#a9002d]" href="/usuarios" (click)="$event.preventDefault(); cancel()">← Directorio de usuarios</a>
+  <h1 class="mt-3 font-[var(--font-heading)] text-3xl font-semibold text-[#a9002d]">{{ editingId() ? 'Editar usuario' : 'Registrar usuario' }}</h1>
+  <p class="mt-3 max-w-2xl text-[#7c8691]">{{ editingId() ? 'Actualiza los datos y el acceso de esta cuenta.' : 'La cuenta entra con el número de documento y el correo institucional.' }}</p>
+
+  @if (notice()) { <p class="mt-4 text-sm font-semibold text-[#a9002d]" role="alert">{{ notice() }}</p> }
+
+  @if (ready()) {
+    <form class="mt-6 grid gap-4 sm:grid-cols-2" (submit)="$event.preventDefault(); save()">
+      <label class="text-sm font-semibold">Tipo de documento
+        <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().documentType" (change)="setField('documentType', $any($event.target).value)">
+          @for (option of documentTypes; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+        </select>
+      </label>
+      <label class="text-sm font-semibold">Número de documento
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().documentNumber" (input)="setField('documentNumber', $any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">Nombres
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().firstName" (input)="setField('firstName', $any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">Apellido paterno
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().paternalLastName" (input)="setField('paternalLastName', $any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">Apellido materno
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().maternalLastName" (input)="setField('maternalLastName', $any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">Sede
+        <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().siteId" (change)="setField('siteId', $any($event.target).value)">
+          <option value="">Selecciona una sede</option>
+          @for (site of sites(); track site.id) { <option [value]="site.id">{{ site.name }}</option> }
+        </select>
+      </label>
+      <label class="text-sm font-semibold">Correo institucional
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" type="email" [value]="draft().email" (input)="setField('email', $any($event.target).value)" placeholder="nombre@uprit.edu.pe" />
+      </label>
+      <label class="text-sm font-semibold">Celular
+        <span class="mt-1 flex gap-2">
+          <select class="h-11 rounded-xl border border-[#eed6db] px-2 font-normal" [value]="draft().mobileCountry" (change)="setField('mobileCountry', $any($event.target).value)">
+            @for (country of countries; track country) { <option [value]="country">{{ country }}</option> }
+          </select>
+          <input class="h-11 min-w-0 flex-1 rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().mobile" (input)="setField('mobile', $any($event.target).value)" />
+        </span>
+      </label>
+      <label class="text-sm font-semibold">Teléfono fijo
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="draft().phone" (input)="setField('phone', $any($event.target).value)" />
+      </label>
+      <label class="text-sm font-semibold">{{ editingId() ? 'Nueva contraseña (opcional)' : 'Contraseña inicial' }}
+        <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" type="password" [value]="draft().password" (input)="setField('password', $any($event.target).value)" autocomplete="new-password" />
+      </label>
+      <label class="flex items-center gap-2 self-end text-sm font-semibold">
+        <input type="checkbox" [checked]="draft().enabled" (change)="setField('enabled', $any($event.target).checked ? 'true' : 'false')" /> Cuenta habilitada
+      </label>
+
+      <div class="sm:col-span-2">
+        <h2 class="text-sm font-semibold text-[#a9002d]">Accesos</h2>
+        <p class="mt-1 text-sm text-[#7c8691]">Cada funcionalidad activa otorga el rol de su módulo: Estudiante, Docente, Asesora, Director o Administrador.</p>
+        @if (groupedAccess().length === 0) {
+          <p class="mt-3 text-sm text-[#7c8691]">Aún no hay funcionalidades. Créalas en Roles y permisos.</p>
+        }
+        @for (group of groupedAccess(); track group.moduleName) {
+          <fieldset class="mt-4">
+            <legend class="text-sm font-semibold">{{ group.moduleName }}</legend>
+            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+              @for (item of group.items; track item.key) {
+                <label class="flex items-start gap-2 text-sm font-normal">
+                  <input class="mt-1" type="checkbox" [checked]="item.enabled" (change)="toggleAccess(item)" />
+                  <span><strong>{{ item.permissionName }}</strong> · {{ item.name }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+        }
+      </div>
+
+      <div class="flex flex-wrap gap-3 sm:col-span-2">
+        <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</ui-button>
+        <ui-button type="button" variant="secondary" (click)="cancel()">Cancelar</ui-button>
+      </div>
+    </form>
+  }
+</section>
