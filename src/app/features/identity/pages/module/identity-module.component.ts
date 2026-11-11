@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { IdentityAuthService } from '../../../../core/auth/identity-auth.service';
 
@@ -14,7 +14,7 @@ const content: Record<ModuleSection, { readonly title: string; readonly descript
 
 const isSection = (value: string): value is ModuleSection => value in content;
 
-@Component({ selector: 'app-identity-module', imports: [RouterLink], templateUrl: './identity-module.component.html' })
+@Component({ selector: 'app-identity-module', templateUrl: './identity-module.component.html' })
 export class IdentityModuleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
