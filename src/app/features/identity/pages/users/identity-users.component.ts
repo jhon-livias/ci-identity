@@ -13,6 +13,7 @@ interface DirectoryUser {
   readonly paternalLastName: string;
   readonly maternalLastName: string;
   readonly typeName: string;
+  readonly systems?: readonly string[];
 }
 
 @Component({
@@ -26,6 +27,7 @@ export class IdentityUsersComponent implements OnInit {
   readonly columns = [
     { key: 'document', label: 'Documento' },
     { key: 'name', label: 'Nombre' },
+    { key: 'system', label: 'Sistema' },
     { key: 'type', label: 'Acceso' },
   ];
   readonly search = signal('');
@@ -55,6 +57,7 @@ export class IdentityUsersComponent implements OnInit {
         id: user.id,
         document: user.documentNumber,
         name: `${user.firstName} ${user.paternalLastName} ${text(user.maternalLastName) ? user.maternalLastName : ''}`.replace(/\s+/g, ' ').trim(),
+        system: Array.isArray(user.systems) && user.systems.length > 0 ? user.systems.filter(text).join(' · ') : 'Sin sistema',
         type: text(user.typeName) && user.typeName ? user.typeName : 'Sin acceso',
       })));
     } catch (error) {
