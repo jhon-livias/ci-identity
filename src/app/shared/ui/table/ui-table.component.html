@@ -54,6 +54,9 @@
                   @if (allowReset()) {
                     <ui-icon-button icon="key" [label]="'Restablecer clave de ' + rowLabel(row)" (click)="reset.emit(row)" />
                   }
+                  @if (allowMfa()) {
+                    <ui-icon-button icon="shield" [label]="mfaLabel(row)" (click)="mfa.emit(row)" />
+                  }
                   <ui-icon-button icon="edit" [label]="'Editar ' + rowLabel(row)" (click)="edit.emit(row)" />
                   <ui-icon-button icon="trash" tone="danger" [label]="'Eliminar ' + rowLabel(row)" (click)="remove.emit(row)" />
                 </div>

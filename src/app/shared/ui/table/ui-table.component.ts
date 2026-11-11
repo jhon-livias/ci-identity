@@ -42,9 +42,11 @@ export class UiTableComponent {
   readonly emptyMessage = input('No hay resultados para mostrar.');
   readonly actions = input(false);
   readonly allowReset = input(false);
+  readonly allowMfa = input(false);
   readonly edit = output<UiTableRow>();
   readonly remove = output<UiTableRow>();
   readonly reset = output<UiTableRow>();
+  readonly mfa = output<UiTableRow>();
   readonly toggle = output<UiTableRow>();
   readonly sortChange = output<UiTableSort>();
   readonly pageChange = output<UiTablePageChange>();
@@ -100,6 +102,13 @@ export class UiTableComponent {
   protected ariaSort(column: UiTableColumn): 'none' | UiTableSortDirection {
     const sort = this.activeSort();
     return sort?.key === column.key ? sort.direction : 'none';
+  }
+
+  protected mfaLabel(row: UiTableRow): string {
+    const name = this.rowLabel(row);
+    if (row['mfa'] === 'Activo') return `La autenticación de ${name} ya está activa`;
+    if (row['mfa'] === 'Pendiente') return `Quitar la obligación de autenticación de ${name}`;
+    return `Obligar a ${name} a activar la autenticación de dos pasos`;
   }
 
   protected rowLabel(row: UiTableRow): string {

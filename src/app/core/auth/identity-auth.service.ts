@@ -20,12 +20,41 @@ export class IdentityAuthService {
   readonly user = signal<IdentityUser | null>(null);
   private csrfToken: string | null = null;
 
-  async login(username: string, password: string, recaptchaToken: string, totpCode?: string): Promise<void> {
+  async login(username: string, password: string, recaptchaToken: string, totpCode?: string): Promise<string | null> {
     const response = await fetch(`${authBaseUrl}/login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, recaptchaToken, ...(totpCode ? { totpCode } : {}) }),
+    });
+    if (!response.ok) throw new Error(await loginError(response));
+    const payload = await response.json() as unknown;
+    const enrollmentToken = enrollmentOf(payload);
+    if (enrollmentToken) return enrollmentToken;
+    const session = toSession(payload);
+    this.csrfToken = session.csrfToken;
+    this.user.set(session.user);
+    return null;
+  }
+
+  async beginEnrollment(enrollmentToken: string): Promise<{ secret: string; qrSvg: string }> {
+    const response = await fetch(`${authBaseUrl}/profile/totp/enroll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrollmentToken }),
+    });
+    if (!response.ok) throw new Error(await loginError(response));
+    const payload = await response.json() as { secret?: unknown; qrSvg?: unknown };
+    if (typeof payload.secret !== 'string' || typeof payload.qrSvg !== 'string') throw new Error('No se pudo preparar la autenticación.');
+    return { secret: payload.secret, qrSvg: payload.qrSvg };
+  }
+
+  async finishEnrollment(enrollmentToken: string, code: string): Promise<void> {
+    const response = await fetch(`${authBaseUrl}/profile/totp/enroll/confirm`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enrollmentToken, code }),
     });
     if (!response.ok) throw new Error(await loginError(response));
     const session = toSession(await response.json() as unknown);
@@ -65,6 +94,12 @@ export class IdentityAuthService {
     return toSession(await response.json() as unknown);
   }
 }
+
+const enrollmentOf = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object') return null;
+  const token = (value as { enrollmentToken?: unknown }).enrollmentToken;
+  return (value as { enrollmentRequired?: unknown }).enrollmentRequired === true && typeof token === 'string' ? token : null;
+};
 
 const loginError = async (response: Response): Promise<string> => {
   try {

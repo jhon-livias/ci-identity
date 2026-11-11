@@ -14,6 +14,8 @@ interface DirectoryUser {
   readonly maternalLastName: string;
   readonly typeName: string;
   readonly systems?: readonly string[];
+  readonly totpEnabled?: boolean;
+  readonly totpRequired?: boolean;
 }
 
 @Component({
@@ -29,6 +31,7 @@ export class IdentityUsersComponent implements OnInit {
     { key: 'name', label: 'Nombre' },
     { key: 'system', label: 'Sistema' },
     { key: 'type', label: 'Acceso' },
+    { key: 'mfa', label: 'MFA' },
   ];
   readonly search = signal('');
   readonly page = signal(0);
@@ -38,6 +41,7 @@ export class IdentityUsersComponent implements OnInit {
   readonly notice = signal('');
   readonly resetNotice = signal<{ username: string; password: string } | null>(null);
   readonly pendingDelete = signal<UiTableRow | null>(null);
+  readonly pendingMfa = signal<UiTableRow | null>(null);
 
   async ngOnInit(): Promise<void> {
     const state = history.state as { notice?: unknown };
@@ -59,6 +63,7 @@ export class IdentityUsersComponent implements OnInit {
         name: `${user.firstName} ${user.paternalLastName} ${text(user.maternalLastName) ? user.maternalLastName : ''}`.replace(/\s+/g, ' ').trim(),
         system: Array.isArray(user.systems) && user.systems.length > 0 ? user.systems.filter(text).join(' · ') : 'Sin sistema',
         type: text(user.typeName) && user.typeName ? user.typeName : 'Sin acceso',
+        mfa: user.totpEnabled ? 'Activo' : user.totpRequired ? 'Pendiente' : 'No',
       })));
     } catch (error) {
       this.notice.set(error instanceof Error ? error.message : 'No pudimos cargar los usuarios.');
@@ -79,6 +84,30 @@ export class IdentityUsersComponent implements OnInit {
   startCreate(): void { void this.router.navigateByUrl('/usuarios/crear'); }
   startEdit(row: UiTableRow): void { void this.router.navigateByUrl(`/usuarios/${String(row['id'])}/editar`); }
   askDelete(row: UiTableRow): void { this.pendingDelete.set(row); }
+
+  askMfa(row: UiTableRow): void {
+    if (row['mfa'] === 'Activo') {
+      this.notice.set('Esa cuenta ya tiene la autenticación de dos pasos activa.');
+      return;
+    }
+    this.pendingMfa.set(row);
+  }
+
+  async confirmMfa(): Promise<void> {
+    const row = this.pendingMfa();
+    this.pendingMfa.set(null);
+    if (!row) return;
+    const required = row['mfa'] !== 'Pendiente';
+    try {
+      await this.http.send('PATCH', `/api/v1/auth/admin/users/${String(row['id'])}/mfa`, { required });
+      this.notice.set(required
+        ? 'En el próximo ingreso deberá activar la autenticación de dos pasos antes de entrar.'
+        : 'Ya no se exige activar la autenticación de dos pasos.');
+      await this.load();
+    } catch (error) {
+      this.notice.set(error instanceof Error ? error.message : 'No se pudo actualizar la obligación.');
+    }
+  }
 
   async confirmDelete(): Promise<void> {
     const row = this.pendingDelete();

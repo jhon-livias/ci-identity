@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export type UiIconName = 'edit' | 'trash' | 'key' | 'chevron-left' | 'chevron-right' | 'chevron-down';
+export type UiIconName = 'edit' | 'trash' | 'key' | 'shield' | 'chevron-left' | 'chevron-right' | 'chevron-down';
 
 @Component({
   selector: 'ui-icon',

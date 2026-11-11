@@ -33,14 +33,26 @@
       [selectedPageSize]="pageSize()"
       [actions]="true"
       [allowReset]="true"
+      [allowMfa]="true"
       emptyMessage="No hay usuarios para mostrar."
       (pageChange)="changePage($event)"
       (edit)="startEdit($event)"
       (remove)="askDelete($event)"
       (reset)="resetPassword($event)"
+      (mfa)="askMfa($event)"
     />
   </div>
 </section>
+
+@if (pendingMfa(); as row) {
+  <ui-confirm
+    [title]="row['mfa'] === 'Pendiente' ? 'Quitar obligación' : 'Exigir autenticación'"
+    [message]="row['mfa'] === 'Pendiente' ? 'Ya no se pedirá activar el segundo paso a ' + row['name'] + '.' : row['name'] + ' deberá activar la autenticación de dos pasos antes de volver a entrar.'"
+    [confirmLabel]="row['mfa'] === 'Pendiente' ? 'Quitar' : 'Exigir'"
+    (confirmed)="confirmMfa()"
+    (cancelled)="pendingMfa.set(null)"
+  />
+}
 
 @if (pendingDelete(); as row) {
   <ui-confirm title="Eliminar usuario" [message]="'Se desactivará la cuenta de ' + row['name'] + '.'" confirmLabel="Eliminar" (confirmed)="confirmDelete()" (cancelled)="pendingDelete.set(null)" />

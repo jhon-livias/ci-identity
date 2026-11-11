@@ -1,6 +1,18 @@
 <app-auth-layout>
   <section aria-labelledby="login-title">
     <h1 id="login-title" class="sr-only">Iniciar sesión</h1>
+    @if (enrollment(); as enroll) {
+      <form class="space-y-4" (submit)="confirmEnrollment($event)">
+        <p class="text-sm text-[#1e1e1e]">Antes de entrar, activa la autenticación en Google Authenticator o Microsoft Authenticator.</p>
+        <img class="mx-auto size-52" [src]="enroll.qr" alt="Código para activar la autenticación de dos pasos" />
+        <p class="break-all text-center font-mono text-sm font-semibold text-[#a9002d]">{{ enroll.secret }}</p>
+        <label class="block text-sm font-semibold" for="enroll-code">Código de la aplicación
+          <input id="enroll-code" class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" inputmode="numeric" autocomplete="one-time-code" maxlength="6" [value]="enrollCode()" (input)="enrollCode.set($any($event.target).value)" />
+        </label>
+        @if (notice(); as message) { <ui-alert [tone]="message.tone">{{ message.text }}</ui-alert> }
+        <ui-button [disabled]="submitting()" [fullWidth]="true" [pill]="true" type="submit">{{ submitting() ? 'Activando…' : 'Activar y entrar' }}</ui-button>
+      </form>
+    } @else {
     <form [formRoot]="loginForm" class="space-y-4" (submit)="submit($event)">
       <ui-field [formField]="loginForm.username" autocomplete="username" id="username" label="Usuario" placeholder="Ingresa tu usuario o correo" />
       <ui-field [formField]="loginForm.password" autocomplete="current-password" id="password" label="Contraseña" placeholder="Ingresa tu contraseña" [showPasswordToggle]="true" type="password" />
@@ -12,9 +24,12 @@
       @if (notice(); as message) { <ui-alert id="login-notice" [tone]="message.tone">{{ message.text }}</ui-alert> }
       <ui-button class="mt-2" [disabled]="submitting()" [fullWidth]="true" [pill]="true" type="submit">{{ submitting() ? 'Ingresando…' : 'Iniciar sesión' }}</ui-button>
     </form>
+    }
+    @if (!enrollment()) {
     <p class="mt-5 text-center text-xs text-[#7c8691]">Acceso restringido a administradores de plataforma.</p>
     <div class="my-5 flex items-center gap-4 text-sm text-[#7c8691]" aria-hidden="true"><span class="h-px flex-1 bg-[#dfd6d6]"></span><span>o</span><span class="h-px flex-1 bg-[#dfd6d6]"></span></div>
     <ui-button [fullWidth]="true" [pill]="true" variant="soft" type="button" (click)="continueWithGoogle()">Continuar con Google</ui-button>
     <div class="mt-6 text-center text-sm"><span class="font-semibold text-[#92001f]">¿Olvidaste tu contraseña?</span></div>
+    }
   </section>
 </app-auth-layout>
