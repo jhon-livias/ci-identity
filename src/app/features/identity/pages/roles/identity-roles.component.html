@@ -1,0 +1,87 @@
+<section class="space-y-6">
+  @if (notice()) { <p class="rounded-2xl bg-white px-6 py-4 text-sm font-semibold text-[#a9002d] shadow-[0_8px_24px_rgb(30_30_30_/_8%)]" role="status">{{ notice() }}</p> }
+
+  <section class="rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgb(30_30_30_/_8%)] sm:p-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="text-sm text-[#7c8691]">Administración global</p>
+        <h1 class="mt-2 font-[var(--font-heading)] text-3xl font-semibold text-[#a9002d]">Roles y permisos</h1>
+        <p class="mt-3 max-w-2xl text-[#7c8691]">Un permiso agrupa funcionalidades de un módulo. Esas funcionalidades son el acceso que se marca al crear un usuario.</p>
+      </div>
+      <ui-button type="button" (click)="startPermission()">Nuevo permiso</ui-button>
+    </div>
+    <div class="mt-6">
+      <ui-table [columns]="permissionColumns" [rows]="permissionRows()" [totalItems]="permissionTotal()" [pageIndex]="permissionPage()" [selectedPageSize]="permissionPageSize()" [actions]="true" emptyMessage="No hay permisos." (pageChange)="changePermissionPage($event)" (edit)="editPermission($event)" (remove)="askDelete('permission', $event)" (toggle)="togglePermissionState($event)" />
+    </div>
+    @if (permissionOpen()) {
+      <form class="mt-6 grid gap-4 border-t border-[#eed6db] pt-6 sm:grid-cols-2" (submit)="$event.preventDefault(); savePermission()">
+        <h2 class="font-[var(--font-heading)] text-xl font-semibold text-[#a9002d] sm:col-span-2">{{ editingPermissionId() ? 'Editar permiso' : 'Nuevo permiso' }}</h2>
+        <label class="text-sm font-semibold">Módulo
+          <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="permissionModule()" (change)="permissionModule.set($any($event.target).value)">
+            @for (module of modules; track module.code) { <option [value]="module.code">{{ module.name }}</option> }
+          </select>
+        </label>
+        <label class="text-sm font-semibold">Nombre del permiso
+          <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="permissionName()" (input)="permissionName.set($any($event.target).value)" />
+        </label>
+        <div class="sm:col-span-2">
+          <label class="text-sm font-semibold">Funcionalidad
+            <span class="mt-1 flex gap-2">
+              <input class="h-11 min-w-0 flex-1 rounded-xl border border-[#eed6db] px-3 font-normal" [value]="featureDraft()" (input)="featureDraft.set($any($event.target).value)" placeholder="Ej. Crear usuarios" />
+              <ui-button type="button" variant="secondary" (click)="addFeature()">Agregar</ui-button>
+            </span>
+          </label>
+          <ul class="mt-3 flex flex-wrap gap-2">
+            @for (feature of features(); track feature) {
+              <li class="flex items-center gap-2 rounded-full bg-[#faf6f7] px-3 py-1 text-sm">{{ feature }} <button type="button" class="font-semibold text-[#a9002d]" (click)="removeFeature(feature)">Quitar</button></li>
+            }
+          </ul>
+        </div>
+        <div class="flex gap-3 sm:col-span-2">
+          <ui-button type="submit" [disabled]="saving()">Guardar permiso</ui-button>
+          <ui-button type="button" variant="secondary" (click)="permissionOpen.set(false)">Cancelar</ui-button>
+        </div>
+      </form>
+    }
+  </section>
+
+  <section class="rounded-2xl bg-white p-6 shadow-[0_8px_24px_rgb(30_30_30_/_8%)] sm:p-8">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <h2 class="font-[var(--font-heading)] text-2xl font-semibold text-[#a9002d]">Tipos de usuario</h2>
+        <p class="mt-2 max-w-2xl text-sm text-[#7c8691]">Agrupa permisos con un nombre (Docente, Asesora, Administrador de tickets). Sirve como plantilla del catálogo.</p>
+      </div>
+      <ui-button type="button" (click)="startType()">Nuevo tipo</ui-button>
+    </div>
+    <div class="mt-6">
+      <ui-table [columns]="typeColumns" [rows]="typeRows()" [totalItems]="typeTotal()" [pageIndex]="typePage()" [selectedPageSize]="typePageSize()" [actions]="true" emptyMessage="No hay tipos de usuario." (pageChange)="changeTypePage($event)" (edit)="editType($event)" (remove)="askDelete('type', $event)" (toggle)="toggleType($event)" />
+    </div>
+    @if (typeOpen()) {
+      <form class="mt-6 border-t border-[#eed6db] pt-6" (submit)="$event.preventDefault(); saveType()">
+        <h3 class="font-[var(--font-heading)] text-xl font-semibold text-[#a9002d]">{{ editingTypeId() ? 'Editar tipo' : 'Nuevo tipo' }}</h3>
+        <label class="mt-4 block max-w-md text-sm font-semibold">Nombre
+          <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="typeName()" (input)="typeName.set($any($event.target).value)" />
+        </label>
+        <fieldset class="mt-4">
+          <legend class="text-sm font-semibold">Permisos incluidos</legend>
+          @if (catalog().length === 0) { <p class="mt-2 text-sm text-[#7c8691]">Crea primero un permiso.</p> }
+          <div class="mt-2 grid gap-2 sm:grid-cols-2">
+            @for (option of catalog(); track option.id) {
+              <label class="flex items-center gap-2 text-sm font-normal">
+                <input type="checkbox" [checked]="selectedPermissions().has(option.id)" (change)="togglePermission(option.id)" /> {{ option.name }}
+              </label>
+            }
+          </div>
+        </fieldset>
+        <div class="mt-4 flex gap-3">
+          <ui-button type="submit" [disabled]="saving()">Guardar tipo</ui-button>
+          <ui-button type="button" variant="secondary" (click)="typeOpen.set(false)">Cancelar</ui-button>
+        </div>
+      </form>
+    }
+  </section>
+</section>
+
+@if (pending(); as current) {
+  <ui-confirm title="Eliminar" [message]="'Se eliminará ' + current.row['name'] + '.'" confirmLabel="Eliminar" (confirmed)="confirmDelete()" (cancelled)="pending.set(null)" />
+}

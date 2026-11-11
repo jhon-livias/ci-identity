@@ -49,6 +49,10 @@ export class IdentityAuthService {
     return true;
   }
 
+  csrfHeaders(): Readonly<Record<string, string>> {
+    return this.csrfToken ? { 'X-CSRF-Token': this.csrfToken } : {};
+  }
+
   async logout(): Promise<void> {
     try {
       await fetch(`${authBaseUrl}/logout`, { method: 'POST', credentials: 'include', headers: this.csrfToken ? { 'X-CSRF-Token': this.csrfToken } : {} });
