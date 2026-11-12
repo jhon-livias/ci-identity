@@ -19,6 +19,7 @@ interface UserDetail {
   readonly email: string;
   readonly enabled: boolean;
   readonly grants: readonly UserGrant[];
+  readonly studyPlans?: { readonly role?: unknown; readonly careerCodes?: unknown };
 }
 
 interface AccessItem {
@@ -82,6 +83,8 @@ export class IdentityUserFormComponent implements OnInit {
   readonly draft = signal<Draft>(emptyDraft());
   readonly sites = signal<readonly SiteOption[]>([]);
   readonly access = signal<readonly AccessItem[]>([]);
+  readonly studyRole = signal<'none' | 'faculty' | 'teacher'>('none');
+  readonly careerCodes = signal('');
   readonly groupedAccess = computed(() => {
     const groups = new Map<string, AccessItem[]>();
     for (const item of this.access()) {
@@ -111,10 +114,23 @@ export class IdentityUserFormComponent implements OnInit {
       });
       const enabled = new Set(detail.grants.filter((grant) => grant.enabled).map((grant) => `${grant.permissionId}:${grant.name.toLocaleLowerCase('es')}`));
       this.access.update((items) => items.map((item) => ({ ...item, enabled: enabled.has(item.key) })));
+      const role = detail.studyPlans?.role;
+      this.studyRole.set(role === 'faculty' || role === 'teacher' ? role : 'none');
+      this.careerCodes.set(Array.isArray(detail.studyPlans?.careerCodes) ? detail.studyPlans.careerCodes.filter((code): code is string => typeof code === 'string').join(', ') : '');
       this.ready.set(true);
     } catch (error) {
       this.notice.set(error instanceof Error ? error.message : 'No pudimos abrir el usuario.');
     }
+  }
+
+  text(event: Event): string {
+    const target = event.target;
+    return target instanceof HTMLInputElement || target instanceof HTMLSelectElement ? target.value : '';
+  }
+
+  choice(event: Event): 'none' | 'faculty' | 'teacher' {
+    const value = this.text(event);
+    return value === 'faculty' || value === 'teacher' ? value : 'none';
   }
 
   setField(field: keyof Draft, value: string): void {
@@ -130,7 +146,10 @@ export class IdentityUserFormComponent implements OnInit {
   async save(): Promise<void> {
     const draft = this.draft();
     const grants = this.access().filter((item) => item.enabled).map((item) => ({ permissionId: item.permissionId, name: item.name, enabled: true }));
-    const problem = validate(draft, grants.length > 0, this.editingId() !== null);
+    const careers = this.careerCodes().split(',').map((code) => code.trim().toUpperCase()).filter((code) => code.length > 0);
+    const studyRole = this.studyRole();
+    const problem = validate(draft, grants.length > 0 || studyRole !== 'none', this.editingId() !== null)
+      ?? (studyRole !== 'none' && (careers.length === 0 || careers.some((code) => !/^[A-Z]{2,8}$/.test(code))) ? 'Indica las carreras con su código, por ejemplo IC, AU.' : null);
     if (problem) { this.notice.set(problem); return; }
     const payload = {
       documentType: draft.documentType,
@@ -146,6 +165,7 @@ export class IdentityUserFormComponent implements OnInit {
       password: draft.password || undefined,
       enabled: draft.enabled,
       grants,
+      studyPlans: { role: studyRole, careerCodes: studyRole === 'none' ? [] : careers },
     };
     this.saving.set(true);
     this.notice.set('');

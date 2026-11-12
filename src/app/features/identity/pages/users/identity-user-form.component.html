@@ -72,6 +72,23 @@
         }
       </div>
 
+      <fieldset class="sm:col-span-2">
+        <legend class="text-sm font-semibold text-[#a9002d]">Planes de estudio</legend>
+        <p class="mt-1 text-sm text-[#7c8691]">Facultad administra la malla y los sílabos. Docente solo consulta el plan activo. El segundo paso queda obligatorio para facultad.</p>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
+          <label class="text-sm font-semibold">Rol
+            <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="studyRole()" (change)="studyRole.set(choice($event))">
+              <option value="none">Sin acceso</option>
+              <option value="faculty">Facultad</option>
+              <option value="teacher">Docente</option>
+            </select>
+          </label>
+          <label class="text-sm font-semibold">Carreras
+            <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="careerCodes()" (input)="careerCodes.set(text($event))" placeholder="IC, AU" />
+          </label>
+        </div>
+      </fieldset>
+
       <div class="flex flex-wrap gap-3 sm:col-span-2">
         <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</ui-button>
         <ui-button type="button" variant="secondary" (click)="cancel()">Cancelar</ui-button>
