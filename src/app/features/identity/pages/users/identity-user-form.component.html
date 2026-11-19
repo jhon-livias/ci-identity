@@ -53,41 +53,33 @@
 
       <div class="sm:col-span-2">
         <h2 class="text-sm font-semibold text-[#a9002d]">Accesos</h2>
-        <p class="mt-1 text-sm text-[#7c8691]">Cada funcionalidad activa otorga el rol de su módulo: Estudiante, Docente, Asesora, Director o Administrador.</p>
-        @if (groupedAccess().length === 0) {
-          <p class="mt-3 text-sm text-[#7c8691]">Aún no hay funcionalidades. Créalas en Roles y permisos.</p>
+        <p class="mt-1 text-sm text-[#7c8691]">Elige el sistema y el rol. Las funcionalidades de ese rol se administran en Roles y permisos.</p>
+        @for (row of assignments(); track row.key) {
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <label class="text-sm font-semibold">Sistema
+              <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="row.system" (change)="setSystem(row.key, text($event))">
+                <option value="">Selecciona un sistema</option>
+                @for (system of systems; track system.id) { <option [value]="system.id">{{ system.name }}</option> }
+              </select>
+            </label>
+            <label class="text-sm font-semibold">Rol
+              <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [disabled]="!row.system" [value]="row.role" (change)="setRole(row.key, text($event))">
+                <option value="">Selecciona un rol</option>
+                @for (role of rolesOf(row.system); track role.code) { <option [value]="role.code">{{ role.name }}</option> }
+              </select>
+            </label>
+            @if (row.system === 'study-plans' && row.role) {
+              <label class="text-sm font-semibold sm:col-span-2">Carreras
+                <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="row.careers" (input)="setCareers(row.key, text($event))" placeholder="IC, AU" />
+              </label>
+            }
+            @if (assignments().length > 1) {
+              <div class="sm:col-span-2"><ui-button type="button" variant="secondary" (click)="removeAssignment(row.key)">Quitar acceso</ui-button></div>
+            }
+          </div>
         }
-        @for (group of groupedAccess(); track group.moduleName) {
-          <fieldset class="mt-4">
-            <legend class="text-sm font-semibold">{{ group.moduleName }}</legend>
-            <div class="mt-2 grid gap-2 sm:grid-cols-2">
-              @for (item of group.items; track item.key) {
-                <label class="flex items-start gap-2 text-sm font-normal">
-                  <input class="mt-1" type="checkbox" [checked]="item.enabled" (change)="toggleAccess(item)" />
-                  <span><strong>{{ item.permissionName }}</strong> · {{ item.name }}</span>
-                </label>
-              }
-            </div>
-          </fieldset>
-        }
+        <div class="mt-4"><ui-button type="button" variant="secondary" (click)="addAssignment()">Agregar otro sistema</ui-button></div>
       </div>
-
-      <fieldset class="sm:col-span-2">
-        <legend class="text-sm font-semibold text-[#a9002d]">Planes de estudio</legend>
-        <p class="mt-1 text-sm text-[#7c8691]">Facultad administra la malla y los sílabos. Docente solo consulta el plan activo. El segundo paso queda obligatorio para facultad.</p>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-          <label class="text-sm font-semibold">Rol
-            <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="studyRole()" (change)="studyRole.set(choice($event))">
-              <option value="none">Sin acceso</option>
-              <option value="faculty">Facultad</option>
-              <option value="teacher">Docente</option>
-            </select>
-          </label>
-          <label class="text-sm font-semibold">Carreras
-            <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="careerCodes()" (input)="careerCodes.set(text($event))" placeholder="IC, AU" />
-          </label>
-        </div>
-      </fieldset>
 
       <div class="flex flex-wrap gap-3 sm:col-span-2">
         <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Guardando…' : 'Guardar' }}</ui-button>
