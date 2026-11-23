@@ -13,6 +13,8 @@ export interface UiTableColumn {
   readonly sortable?: boolean;
   readonly align?: 'start' | 'center' | 'end';
   readonly kind?: 'text' | 'switch';
+  readonly width?: string;
+  readonly whitespace?: 'normal' | 'nowrap' | 'pre-line';
 }
 
 export interface UiTableSort {
@@ -55,6 +57,7 @@ export class UiTableComponent {
   private readonly pageSize = signal(5);
   private readonly sort = signal<UiTableSort | null>(null);
   protected readonly remote = computed(() => this.totalItems() !== null);
+  protected readonly sized = computed(() => this.columns().some((column) => Boolean(column.width)));
   protected readonly activeSort = computed(() => this.sortState() ?? this.sort());
   protected readonly activePageSize = computed(() => this.selectedPageSize() ?? this.pageSize());
   protected readonly total = computed(() => this.totalItems() ?? this.rows().length);
@@ -106,7 +109,7 @@ export class UiTableComponent {
 
   protected mfaLabel(row: UiTableRow): string {
     const name = this.rowLabel(row);
-    if (row['mfa'] === 'Activo') return `La autenticación de ${name} ya está activa`;
+    if (row['mfa'] === 'Activo') return `Reiniciar el autenticador de ${name}`;
     if (row['mfa'] === 'Pendiente') return `Quitar la obligación de autenticación de ${name}`;
     return `Obligar a ${name} a activar la autenticación de dos pasos`;
   }

@@ -3,17 +3,24 @@
     <div>
       <p class="text-sm text-[#7c8691]">Administración global</p>
       <h1 class="mt-2 font-[var(--font-heading)] text-3xl font-semibold text-[#a9002d]">Directorio de usuarios</h1>
-      <p class="mt-3 max-w-2xl text-[#7c8691]">Crea cuentas, define su acceso y restablece contraseñas. El usuario entra con su número de documento.</p>
+      <p class="mt-3 max-w-2xl text-[#7c8691]">Crea cuentas, define su acceso, restablece contraseñas y reinicia el autenticador si se pierde el dispositivo. El usuario entra con su número de documento.</p>
     </div>
     <ui-button type="button" (click)="startCreate()">Nuevo usuario</ui-button>
   </div>
 
-  <form class="mt-6 flex flex-wrap gap-3" (submit)="$event.preventDefault(); searchUsers()">
+  <form class="mt-6 flex flex-wrap items-end gap-3" (submit)="$event.preventDefault(); searchUsers()">
     <label class="min-w-64 flex-1 text-sm font-semibold text-[#1e1e1e]">
       Buscar
       <input class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="search()" (input)="search.set($any($event.target).value)" placeholder="Nombre, documento o correo" />
     </label>
-    <ui-button type="submit" variant="secondary">Buscar</ui-button>
+    <label class="w-full text-sm font-semibold text-[#1e1e1e] sm:w-64">
+      Sistema
+      <select class="mt-1 h-11 w-full rounded-xl border border-[#eed6db] px-3 font-normal" [value]="system()" (change)="system.set($any($event.target).value); searchUsers()">
+        <option value="">Todos los sistemas</option>
+        @for (option of systemOptions; track option.value) { <option [value]="option.value">{{ option.label }}</option> }
+      </select>
+    </label>
+    <ui-button type="submit" variant="secondary" size="field">Buscar</ui-button>
   </form>
 
   @if (notice()) { <p class="mt-4 text-sm font-semibold text-[#a9002d]" role="status">{{ notice() }}</p> }
@@ -46,9 +53,9 @@
 
 @if (pendingMfa(); as row) {
   <ui-confirm
-    [title]="row['mfa'] === 'Pendiente' ? 'Quitar obligación' : 'Exigir autenticación'"
-    [message]="row['mfa'] === 'Pendiente' ? 'Ya no se pedirá activar el segundo paso a ' + row['name'] + '.' : row['name'] + ' deberá activar la autenticación de dos pasos antes de volver a entrar.'"
-    [confirmLabel]="row['mfa'] === 'Pendiente' ? 'Quitar' : 'Exigir'"
+    [title]="row['mfa'] === 'Activo' ? 'Reiniciar autenticador' : row['mfa'] === 'Pendiente' ? 'Quitar obligación' : 'Exigir autenticación'"
+    [message]="row['mfa'] === 'Activo' ? 'Se borrará el código de ' + row['name'] + '. En el próximo ingreso deberá activarlo de nuevo. La contraseña no cambia.' : row['mfa'] === 'Pendiente' ? 'Ya no se pedirá activar el segundo paso a ' + row['name'] + '.' : row['name'] + ' deberá activar la autenticación de dos pasos antes de volver a entrar.'"
+    [confirmLabel]="row['mfa'] === 'Activo' ? 'Reiniciar' : row['mfa'] === 'Pendiente' ? 'Quitar' : 'Exigir'"
     (confirmed)="confirmMfa()"
     (cancelled)="pendingMfa.set(null)"
   />

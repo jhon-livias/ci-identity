@@ -11,4 +11,5 @@ export class UiButtonComponent {
   readonly disabled = input(false);
   readonly fullWidth = input(false);
   readonly pill = input(false);
+  readonly size = input<'md' | 'field'>('md');
 }

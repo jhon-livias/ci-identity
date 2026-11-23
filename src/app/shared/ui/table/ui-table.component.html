@@ -1,6 +1,12 @@
 <section class="table-card" aria-label="Tabla de resultados">
   <div class="table-card__scroll">
-    <table class="table-card__table">
+    <table class="table-card__table" [class.table-card__table--sized]="sized()">
+      <colgroup>
+        @for (column of columns(); track column.key) {
+          <col [style.width]="column.width ?? null" />
+        }
+        @if (actions()) { <col class="table-card__actions-col" /> }
+      </colgroup>
       <thead>
         <tr>
           @for (column of columns(); track column.key) {
@@ -9,6 +15,8 @@
               [class.table-card__cell--center]="column.align === 'center'"
               [class.table-card__cell--end]="column.align === 'end'"
               scope="col"
+              [style.width]="column.width ?? null"
+              [style.white-space]="column.whitespace ?? null"
             >
               @if (column.sortable) {
                 <button class="table-card__sort" type="button" (click)="sortColumn(column)">
@@ -31,6 +39,8 @@
               <td
                 [class.table-card__cell--center]="column.align === 'center'"
                 [class.table-card__cell--end]="column.align === 'end'"
+                [style.width]="column.width ?? null"
+                [style.white-space]="column.whitespace ?? null"
               >
                 @if (column.kind === 'switch') {
                   <button

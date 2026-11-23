@@ -53,3 +53,9 @@
 .button--pill {
   border-radius: 9999px;
 }
+
+.button--field {
+  height: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+}

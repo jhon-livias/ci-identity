@@ -27,13 +27,19 @@ export class IdentityUsersComponent implements OnInit {
   private readonly http = inject(IdentityHttp);
   private readonly router = inject(Router);
   readonly columns = [
-    { key: 'document', label: 'Documento' },
+    { key: 'document', label: 'Documento', width: '8rem', whitespace: 'nowrap' as const },
     { key: 'name', label: 'Nombre' },
-    { key: 'system', label: 'Sistema' },
-    { key: 'type', label: 'Acceso' },
-    { key: 'mfa', label: 'MFA' },
+    { key: 'system', label: 'Sistema', width: '14rem', whitespace: 'pre-line' as const },
+    { key: 'type', label: 'Acceso', width: '8.5rem', whitespace: 'nowrap' as const },
+    { key: 'mfa', label: 'MFA', width: '6.5rem', whitespace: 'nowrap' as const },
+  ];
+  readonly systemOptions = [
+    { value: 'idiomas', label: 'Centro de idiomas' },
+    { value: 'study-plans', label: 'Planes de estudio' },
+    { value: 'tickets', label: 'Sistema de Tickets' },
   ];
   readonly search = signal('');
+  readonly system = signal('');
   readonly page = signal(0);
   readonly pageSize = signal<5 | 10 | 20>(10);
   readonly total = signal(0);
@@ -50,9 +56,15 @@ export class IdentityUsersComponent implements OnInit {
   }
 
   async load(): Promise<void> {
-    const params = new URLSearchParams({ page: String(this.page() + 1), pageSize: String(this.pageSize()) });
+    const params = new URLSearchParams({
+      page: String(this.page() + 1),
+      pageSize: String(this.pageSize()),
+      sort: 'system',
+      direction: 'asc',
+    });
     const term = this.search().trim();
     if (term) params.set('search', term);
+    if (this.system()) params.set('system', this.system());
     try {
       const body = await this.http.get<{ total?: number; users?: unknown }>(`/api/v1/auth/admin/users?${params}`);
       const users = Array.isArray(body.users) ? body.users.filter(isUser) : [];
@@ -61,7 +73,7 @@ export class IdentityUsersComponent implements OnInit {
         id: user.id,
         document: user.documentNumber,
         name: `${user.firstName} ${user.paternalLastName} ${text(user.maternalLastName) ? user.maternalLastName : ''}`.replace(/\s+/g, ' ').trim(),
-        system: Array.isArray(user.systems) && user.systems.length > 0 ? user.systems.filter(text).join(' · ') : 'Sin sistema',
+        system: Array.isArray(user.systems) && user.systems.length > 0 ? user.systems.filter(text).join('\n') : 'Sin sistema',
         type: text(user.typeName) && user.typeName ? user.typeName : 'Sin acceso',
         mfa: user.totpEnabled ? 'Activo' : user.totpRequired ? 'Pendiente' : 'No',
       })));
@@ -86,10 +98,6 @@ export class IdentityUsersComponent implements OnInit {
   askDelete(row: UiTableRow): void { this.pendingDelete.set(row); }
 
   askMfa(row: UiTableRow): void {
-    if (row['mfa'] === 'Activo') {
-      this.notice.set('Esa cuenta ya tiene la autenticación de dos pasos activa.');
-      return;
-    }
     this.pendingMfa.set(row);
   }
 
@@ -97,15 +105,21 @@ export class IdentityUsersComponent implements OnInit {
     const row = this.pendingMfa();
     this.pendingMfa.set(null);
     if (!row) return;
-    const required = row['mfa'] !== 'Pendiente';
+    const reset = row['mfa'] === 'Activo';
     try {
-      await this.http.send('PATCH', `/api/v1/auth/admin/users/${String(row['id'])}/mfa`, { required });
-      this.notice.set(required
-        ? 'En el próximo ingreso deberá activar la autenticación de dos pasos antes de entrar.'
-        : 'Ya no se exige activar la autenticación de dos pasos.');
+      if (reset) {
+        await this.http.send('POST', `/api/v1/auth/admin/users/${String(row['id'])}/mfa-reset`);
+        this.notice.set(`${String(row['name'])} deberá activar un autenticador nuevo en el próximo ingreso. La contraseña no cambia.`);
+      } else {
+        const required = row['mfa'] !== 'Pendiente';
+        await this.http.send('PATCH', `/api/v1/auth/admin/users/${String(row['id'])}/mfa`, { required });
+        this.notice.set(required
+          ? 'En el próximo ingreso deberá activar la autenticación de dos pasos antes de entrar.'
+          : 'Ya no se exige activar la autenticación de dos pasos.');
+      }
       await this.load();
     } catch (error) {
-      this.notice.set(error instanceof Error ? error.message : 'No se pudo actualizar la obligación.');
+      this.notice.set(error instanceof Error ? error.message : 'No se pudo actualizar la autenticación.');
     }
   }
 
