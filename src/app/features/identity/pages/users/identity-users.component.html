@@ -52,13 +52,26 @@
 </section>
 
 @if (pendingMfa(); as row) {
-  <ui-confirm
-    [title]="row['mfa'] === 'Activo' ? 'Reiniciar autenticador' : row['mfa'] === 'Pendiente' ? 'Quitar obligación' : 'Exigir autenticación'"
-    [message]="row['mfa'] === 'Activo' ? 'Se borrará el código de ' + row['name'] + '. En el próximo ingreso deberá activarlo de nuevo. La contraseña no cambia.' : row['mfa'] === 'Pendiente' ? 'Ya no se pedirá activar el segundo paso a ' + row['name'] + '.' : row['name'] + ' deberá activar la autenticación de dos pasos antes de volver a entrar.'"
-    [confirmLabel]="row['mfa'] === 'Activo' ? 'Reiniciar' : row['mfa'] === 'Pendiente' ? 'Quitar' : 'Exigir'"
-    (confirmed)="confirmMfa()"
-    (cancelled)="pendingMfa.set(null)"
-  />
+  <div class="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="mfa-title" (click)="pendingMfa.set(null)" (document:keydown.escape)="pendingMfa.set(null)">
+    <section class="w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_18px_50px_rgb(20_20_20_/_28%)]" (click)="$event.stopPropagation()">
+      <h2 id="mfa-title" class="font-[var(--font-heading)] text-2xl font-semibold text-[#a9002d]">Autenticación</h2>
+      <p class="mt-1 text-sm text-[#7c8691]">{{ row['name'] }}</p>
+      @if (notice()) { <p class="mt-4 text-sm font-semibold text-[#a9002d]" role="status">{{ notice() }}</p> }
+      <div class="mt-6 flex items-center justify-between gap-4">
+        <div>
+          <p class="font-semibold text-[#1e1e1e]">Exigir autenticación de dos pasos</p>
+          <p class="mt-1 text-sm text-[#7c8691]">{{ mfaDetail(row) }}</p>
+        </div>
+        <button class="relative inline-flex h-6 w-11 shrink-0 rounded-full transition" [class.bg-[#d0123a]]="mfaRequired(row)" [class.bg-[#d7d1d2]]="!mfaRequired(row)" type="button" role="switch" [attr.aria-checked]="mfaRequired(row)" [disabled]="mfaBusy()" [attr.aria-label]="'Exigir autenticación de ' + row['name']" (click)="toggleMfa(row)">
+          <span class="absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition" [class.translate-x-5]="mfaRequired(row)"></span>
+        </button>
+      </div>
+      <div class="mt-6 flex flex-wrap justify-end gap-3">
+        <ui-button variant="secondary" type="button" [disabled]="mfaBusy() || row['mfa'] !== 'Activo'" (click)="resetMfa(row)">Reiniciar autenticador</ui-button>
+        <ui-button type="button" (click)="pendingMfa.set(null)">Cerrar</ui-button>
+      </div>
+    </section>
+  </div>
 }
 
 @if (pendingDelete(); as row) {

@@ -48,6 +48,7 @@ export class IdentityUsersComponent implements OnInit {
   readonly resetNotice = signal<{ username: string; password: string } | null>(null);
   readonly pendingDelete = signal<UiTableRow | null>(null);
   readonly pendingMfa = signal<UiTableRow | null>(null);
+  readonly mfaBusy = signal(false);
 
   async ngOnInit(): Promise<void> {
     const state = history.state as { notice?: unknown };
@@ -98,28 +99,50 @@ export class IdentityUsersComponent implements OnInit {
   askDelete(row: UiTableRow): void { this.pendingDelete.set(row); }
 
   askMfa(row: UiTableRow): void {
+    this.notice.set('');
     this.pendingMfa.set(row);
   }
 
-  async confirmMfa(): Promise<void> {
-    const row = this.pendingMfa();
-    this.pendingMfa.set(null);
-    if (!row) return;
-    const reset = row['mfa'] === 'Activo';
+  mfaRequired(row: UiTableRow): boolean {
+    return row['mfa'] !== 'No';
+  }
+
+  mfaDetail(row: UiTableRow): string {
+    if (row['mfa'] === 'Activo') return 'El autenticador está activo.';
+    if (row['mfa'] === 'Pendiente') return 'Debe activarlo en el próximo ingreso.';
+    return 'No se exige un autenticador.';
+  }
+
+  async toggleMfa(row: UiTableRow): Promise<void> {
+    const required = row['mfa'] === 'No';
+    await this.changeMfa(row, async () => {
+      await this.http.send('PATCH', `/api/v1/auth/admin/users/${String(row['id'])}/mfa`, { required });
+      this.notice.set(required
+        ? 'En el próximo ingreso deberá activar la autenticación de dos pasos.'
+        : 'Ya no se exige la autenticación de dos pasos.');
+    });
+  }
+
+  async resetMfa(row: UiTableRow): Promise<void> {
+    await this.changeMfa(row, async () => {
+      await this.http.send('POST', `/api/v1/auth/admin/users/${String(row['id'])}/mfa-reset`);
+      this.notice.set('En el próximo ingreso deberá activar un autenticador nuevo. La contraseña no cambia.');
+    });
+  }
+
+  private async changeMfa(row: UiTableRow, action: () => Promise<void>): Promise<void> {
+    if (this.mfaBusy()) return;
+    this.mfaBusy.set(true);
+    this.notice.set('');
     try {
-      if (reset) {
-        await this.http.send('POST', `/api/v1/auth/admin/users/${String(row['id'])}/mfa-reset`);
-        this.notice.set(`${String(row['name'])} deberá activar un autenticador nuevo en el próximo ingreso. La contraseña no cambia.`);
-      } else {
-        const required = row['mfa'] !== 'Pendiente';
-        await this.http.send('PATCH', `/api/v1/auth/admin/users/${String(row['id'])}/mfa`, { required });
-        this.notice.set(required
-          ? 'En el próximo ingreso deberá activar la autenticación de dos pasos antes de entrar.'
-          : 'Ya no se exige activar la autenticación de dos pasos.');
-      }
+      await action();
       await this.load();
+      const fresh = this.rows().find((item) => item['id'] === row['id']);
+      if (fresh) this.pendingMfa.set(fresh);
     } catch (error) {
       this.notice.set(error instanceof Error ? error.message : 'No se pudo actualizar la autenticación.');
+    } finally {
+      this.mfaBusy.set(false);
     }
   }
 

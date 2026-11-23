@@ -108,10 +108,7 @@ export class UiTableComponent {
   }
 
   protected mfaLabel(row: UiTableRow): string {
-    const name = this.rowLabel(row);
-    if (row['mfa'] === 'Activo') return `Reiniciar el autenticador de ${name}`;
-    if (row['mfa'] === 'Pendiente') return `Quitar la obligación de autenticación de ${name}`;
-    return `Obligar a ${name} a activar la autenticación de dos pasos`;
+    return `Administrar la autenticación de ${this.rowLabel(row)}`;
   }
 
   protected rowLabel(row: UiTableRow): string {
